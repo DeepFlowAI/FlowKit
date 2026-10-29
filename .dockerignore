@@ -1,0 +1,63 @@
+# Version control
+.git
+.gitignore
+.gitmodules
+.gitattributes
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+*.swp
+
+# Local / env profiles (injected at runtime via compose env_file on server)
+.env
+.env.local
+.env.dev
+.env.prod
+.env.deploy
+flowkit.local.yaml
+flowkit.local.yml
+
+# Logs / build outputs
+*.log
+bin/
+coverage.out
+coverage.html
+*.test
+*.prof
+*.pprof
+node_modules/
+vendor/
+
+# Python tooling not needed for the Go build
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+sdk/python/   # SDK is a separate distribution
+
+# Project artefacts not needed in the container
+docs/
+develop/
+openspec/
+examples/
+
+# Upstream source checkouts, not needed at build time.
+opensource/emiago-sipgo/
+opensource/pion-webrtc/
+opensource/pion-ion-sfu/
+opensource/pion-opus/
+opensource/pion-example-webrtc-applications/
+
+# Learning demos and their assets
+cmd/learn/
+
+# gstack / claude tooling
+.gstack/
+.claude/
+
+# Test fixtures (regenerated on demand)
+tests/fixtures/audio/*.wav
+tests/fixtures/audio/*.pcm

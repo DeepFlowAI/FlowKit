@@ -1,0 +1,37 @@
+id: s3_sip_bridge_webrtc
+name: "S3 · SIP bridge WebRTC"
+enabled: true
+
+load:
+  start: 5
+  step: 5
+  max: 300
+  cps: 10
+  hold_seconds: 120
+  stagger_ms: 100
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 5000
+  max_loss_pct: 2.0
+
+steady:
+  enabled: true
+  ratio: 0.8
+  duration_seconds: 1800
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 20
+  wait_seconds: 90
+
+drivers:
+  - type: sip_inbound
+    codec: pcmu
+  - type: webrtc_offer
+  - type: bridge
+    rpc_method: call.bridge
+
+requires:
+  env:
+    SIP_KERNEL_AUTO_LLM: "false"

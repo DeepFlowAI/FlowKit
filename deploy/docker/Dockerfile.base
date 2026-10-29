@@ -1,0 +1,33 @@
+# Flowkit runtime base — rarely rebuilt (ffmpeg / Alpine upgrades only).
+# Push via GitHub Actions: workflow "Build base image" (workflow_dispatch).
+#
+# Local build:
+#   docker build -f deploy/docker/Dockerfile.base \
+#     -t deepflowagent/flowkit-base:alpine3.20 deploy/docker
+
+FROM alpine:3.20
+
+ARG ALPINE_MIRROR=
+
+# ffmpeg — ASR/TTS codec conversion; curl — container healthcheck;
+# ca-certificates — OTLP HTTPS; tzdata — log timestamps.
+RUN if [ -n "$ALPINE_MIRROR" ]; then \
+      sed -i "s|dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
+    fi \
+    && apk add --no-cache \
+    ffmpeg \
+    ca-certificates \
+    tzdata \
+    curl \
+    && addgroup -S flowkit \
+    && adduser -S flowkit -G flowkit
+
+WORKDIR /app
+
+# 9600 — WebSocket RPC; 5060/udp — SIP (M3).
+EXPOSE 9600
+EXPOSE 5060/udp
+
+LABEL org.opencontainers.image.title="flowkit-base" \
+      org.opencontainers.image.description="Flowkit kernel runtime base (Alpine + ffmpeg)" \
+      org.opencontainers.image.vendor="DeepFlow"

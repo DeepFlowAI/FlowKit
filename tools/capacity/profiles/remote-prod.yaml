@@ -1,0 +1,38 @@
+name: remote-prod
+description: "公网 Flowkit — 只读容量探测，须 --i-know-its-remote（复制后改 target 为你的公网 IP）"
+
+ramp_policy:
+  kind: dev
+  label: "远程有界探测"
+  description: "远程默认有 cap 保护；完整顶点请复制 server-vertex 并改 target。"
+  vertex_hard_ceiling: 100
+
+target:
+  http_base: "http://203.0.113.50:9600"
+  ws_url: "ws://203.0.113.50:9600/ws"
+  sip_host: "203.0.113.50"
+  sip_port: 5060
+  sip_transport: udp
+  webrtc_public_ip: "203.0.113.50"
+  ice_servers:
+    - "stun:stun.miwifi.com:3478"
+    - "stun:stun.l.google.com:19302"
+
+env:
+  ASR_PROVIDER: mock
+  TTS_PROVIDER: mock
+  LLM_PROVIDER: ""
+  SIP_KERNEL_AUTO_LLM: "false"
+  SIP_MAX_INBOUND_CALLS: "0"
+
+safety:
+  max_concurrent_cap: 100
+  require_mock_providers: true
+  confirm_remote: true
+
+preflight:
+  check_health: true
+  check_metrics: true
+  check_udp_ports:
+    - "5060/udp"
+    - "16384-32767/udp"

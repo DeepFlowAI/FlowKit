@@ -1,0 +1,21 @@
+# TTS pronunciation lexicon, applied to every utterance before synthesis
+# (enable with TTS_LEXICON_PATH; edits are picked up within 30s).
+#
+# Fields:
+#   term    text to match, literally
+#   pinyin  intended reading with tone numbers, e.g. "xiang1 yang2"
+#   say     spoken substitute written into the text for plain-text models
+#   models  model names (TTS_MODEL) the entry applies to; omit = all models
+#   test    a sentence containing term, used by offline regression checks
+#   note    free text: why the entry exists, who added it, when
+#
+# Add an entry only after the offline check shows "say" fixes the reading.
+#
+# Example:
+#   - term: 襄阳
+#     pinyin: xiang1 yang2
+#     say: 香阳
+#     models: [cosyvoice2]
+#     test: 欢迎来到襄阳。
+#     note: cosyvoice2 reads 江阳
+entries: []

@@ -1,0 +1,38 @@
+id: s3_sip_bridge_webrtc_quick
+name: "S3 · Bridge 快速验证"
+enabled: true
+
+load:
+  start: 3
+  step: 3
+  max: 9
+  cps: 5
+  hold_seconds: 5
+  stagger_ms: 100
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 8000
+  min_calls_factor: 1.5
+  max_loss_pct: 2.0
+
+steady:
+  enabled: false
+  ratio: 0.8
+  duration_seconds: 60
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 15
+  wait_seconds: 15
+
+drivers:
+  - type: sip_inbound
+    codec: pcmu
+  - type: webrtc_offer
+  - type: bridge
+    rpc_method: call.bridge
+
+requires:
+  env:
+    SIP_KERNEL_AUTO_LLM: "false"

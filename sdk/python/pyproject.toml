@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowkit-sdk"
+version = "0.3.0"
+description = "Python SDK for the Flowkit AI voice kernel"
+readme = "README.md"
+license = { text = "AGPL-3.0" }
+authors = [{ name = "Flowkit Authors" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Telephony",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+]
+dependencies = [
+    "websockets>=14.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[project.urls]
+Homepage = "https://github.com/DeepFlowAI/FlowKit"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flowkit*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

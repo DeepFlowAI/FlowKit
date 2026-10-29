@@ -1,0 +1,44 @@
+id: s4_full_cc_mock
+name: "S4 · Mock CC 完整工作流"
+enabled: true
+
+load:
+  start: 5
+  step: 5
+  max: 200
+  cps: 5
+  hold_seconds: 0
+  stagger_ms: 200
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 30000
+  max_loss_pct: 2.0
+
+steady:
+  enabled: true
+  ratio: 0.8
+  duration_seconds: 3600
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 15
+  wait_seconds: 60
+
+drivers:
+  - type: sip_inbound
+    codec: pcmu
+  - type: mock_cc
+    workflow:
+      - call.answer
+      - call.say
+      - call.listen
+      - call.hangup
+    say_text: "capacity test"
+    listen_timeout_seconds: 5
+
+requires:
+  env:
+    SIP_KERNEL_AUTO_LLM: "false"
+    ASR_PROVIDER: mock
+    TTS_PROVIDER: mock

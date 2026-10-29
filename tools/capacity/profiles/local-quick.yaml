@@ -1,0 +1,42 @@
+name: local-quick
+description: "快速验证 S1–S4（小步长，适合开发机）"
+
+ramp_policy:
+  kind: dev
+  label: "本地快速验证"
+  description: "使用 quick 场景的低 max + cap=30，数分钟内验证驱动与链路，不追求顶点。"
+  vertex_hard_ceiling: 30
+
+target:
+  http_base: "http://127.0.0.1:9600"
+  ws_url: "ws://127.0.0.1:9600/ws"
+  sip_host: "127.0.0.1"
+  sip_port: 5060
+  sip_transport: udp
+  webrtc_public_ip: "127.0.0.1"
+  ice_servers:
+    - "stun:stun.l.google.com:19302"
+  process_name: flowkit
+
+env:
+  ASR_PROVIDER: mock
+  TTS_PROVIDER: mock
+  LLM_PROVIDER: ""
+  SIP_KERNEL_AUTO_LLM: "false"
+  SIP_EXT_IP: "127.0.0.1"
+  SIP_MAX_INBOUND_CALLS: "0"
+
+safety:
+  max_concurrent_cap: 30
+  require_mock_providers: true
+  confirm_remote: false
+
+preflight:
+  check_health: true
+  check_metrics: true
+
+scenario_overrides:
+  s1: s1_sip_inbound_quick.yaml
+  s2: s2_webrtc_offer_quick.yaml
+  s3: s3_sip_bridge_webrtc_quick.yaml
+  s4: s4_full_cc_mock_quick.yaml

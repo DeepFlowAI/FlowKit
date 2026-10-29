@@ -1,0 +1,32 @@
+id: s1_sip_inbound
+name: "S1 · SIP 呼入保持"
+enabled: true
+
+load:
+  start: 10
+  step: 10
+  max: 2000
+  cps: 50
+  hold_seconds: 60
+  stagger_ms: 0
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 3000
+  max_loss_pct: 2.0
+
+steady:
+  enabled: true
+  ratio: 0.8
+  duration_seconds: 3600
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 15
+  wait_seconds: 60
+
+drivers:
+  - type: sip_inbound
+    engine: sipp
+    codec: pcmu
+    media_mode: silence

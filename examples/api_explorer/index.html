@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Flowkit API Explorer</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --border: #d4d4d4;
+    --bg-card: #fafafa;
+    --bg-code: #11181f;
+    --fg-code: #d8e0e6;
+    --accent: #2563eb;
+    --accent-fg: #fff;
+    --danger: #dc2626;
+    --ok: #16a34a;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    max-width: 960px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 0.25rem 0; }
+  .subtitle { color: var(--muted); margin-bottom: 1.25rem; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem 1rem;
+    background: var(--bg-card);
+  }
+  .card h2 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .api-tag {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+    font-weight: 500;
+  }
+  .api-tag.notify { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .row + .row { margin-top: 0.5rem; }
+  button {
+    font: inherit;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  button.primary.agent-waiting { animation: agent-pulse 1.2s ease-in-out infinite; }
+  @keyframes agent-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
+    50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  }
+  button.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+  input, select {
+    font: inherit;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background: #fff;
+  }
+  input[type="text"] { width: 100%; }
+  label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 0.15rem; }
+  .pill {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    background: #e5e7eb;
+    font-size: 0.78rem;
+    color: #374151;
+  }
+  .pill.ok { background: var(--ok); color: #fff; }
+  .pill.bad { background: var(--danger); color: #fff; }
+  .pill.warn { background: #f59e0b; color: #fff; }
+  pre, .code {
+    background: var(--bg-code);
+    color: var(--fg-code);
+    padding: 0.5rem 0.65rem;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0.35rem 0 0;
+  }
+  pre.scroll { max-height: 220px; }
+  .log-line { margin: 0; padding: 0.05rem 0; }
+  .log-line.req { color: #93c5fd; }
+  .log-line.res { color: #86efac; }
+  .log-line.err { color: #fca5a5; }
+  .log-line.notif { color: #fde68a; }
+  .log-line .ts { color: #6b7280; }
+  .speech-area { min-height: 4em; padding: 0.5rem; background: #fff; border: 1px solid var(--border); border-radius: 6px; }
+  .speech-area .partial { color: #6b7280; font-style: italic; }
+  .speech-area .final { color: #111; font-weight: 500; }
+  .speech-area .final + .final { margin-top: 0.25rem; }
+  .llm-output {
+    min-height: 5em;
+    max-height: 160px;
+    overflow: auto;
+    padding: 0.5rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .api-tag.client { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+  .llm-output .user { color: #1d4ed8; margin-bottom: 0.35rem; }
+  .llm-output .assistant { color: #111; font-weight: 500; margin-bottom: 0.5rem; }
+  textarea {
+    font: inherit;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background: #fff;
+    width: 100%;
+    resize: vertical;
+  }
+  .muted { color: var(--muted); font-size: 0.85rem; }
+  .full { grid-column: 1 / -1; }
+  details { font-size: 0.85rem; }
+  details summary { cursor: pointer; color: var(--muted); user-select: none; }
+  .kvp { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; }
+  .kvp strong { color: var(--muted); font-weight: normal; }
+</style>
+</head>
+<body>
+  <h1>Flowkit API Explorer</h1>
+  <div class="subtitle">
+    单页验收：Connect → Start call → 语音对话（Listen → LLM → 流式 TTS + 打断）→ Hangup。
+    远程部署：先 <code>export FLOWKIT_HOST=你的公网IP</code>，再打开
+    <code>?host=</code> 链接（见下方说明）。
+  </div>
+
+  <div class="grid">
+
+    <!-- ===== Card 1: Connection ===== -->
+    <div class="card full">
+      <h2>1. Connect <span class="api-tag">system.hello</span></h2>
+      <div class="row">
+        <label style="flex:1; max-width:380px;">
+          Kernel URL
+          <input id="url" type="text" value="ws://localhost:9600/ws">
+        </label>
+        <label style="flex:1; max-width:260px;">
+          API Key
+          <input id="apiKey" type="password" autocomplete="off" placeholder="FLOWKIT_API_KEY (empty for a local kernel without one)">
+        </label>
+        <div>
+          <label>&nbsp;</label>
+          <button id="connect" type="button" class="primary">Connect</button>
+          <button id="disconnect" type="button" disabled>Disconnect</button>
+        </div>
+        <div>
+          <label>WS state</label>
+          <span id="wsState" class="pill">idle</span>
+        </div>
+      </div>
+      <details style="margin-top:0.5rem;">
+        <summary>server_info (from system.hello)</summary>
+        <pre id="serverInfo" class="code">—</pre>
+      </details>
+    </div>
+
+    <!-- ===== Card 2: WebRTC offer + call.answer ===== -->
+    <div class="card">
+      <h2>2. Start call <span class="api-tag">webrtc.offer</span> <span class="api-tag">call.answer</span> <span class="api-tag notify">webrtc.ice ←</span></h2>
+      <div class="muted">
+        Captures mic, builds RTCPeerConnection (PCMU only), sends SDP offer,
+        then auto-answers via <code>call.answer</code>. Remote audio plays
+        below.
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <button id="startCall" class="primary" disabled>Start call</button>
+        <span>
+          <label>Call state</label>
+          <span id="callState" class="pill">none</span>
+        </span>
+        <span class="kvp"><strong>call_id:</strong> <span id="callIdShow">—</span></span>
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <span class="kvp"><strong>pc state:</strong> <span id="pcState">—</span></span>
+        <span class="kvp"><strong>ice:</strong> <span id="iceState">—</span></span>
+      </div>
+      <audio id="remoteAudio" autoplay style="width:100%; margin-top:0.5rem;"></audio>
+    </div>
+
+    <!-- ===== Card 2b: SIP inbound test (client-side policy) ===== -->
+    <div class="card full">
+      <h2>2b. SIP 入站测试 <span class="api-tag notify">call.incoming ←</span> <span class="api-tag">call.bridge</span> <span class="api-tag">llm.chat</span></h2>
+      <div class="muted">
+        内核 SIP 入站<strong>始终只广播</strong> <code>call.incoming</code>，不在服务端写死 notify / bridge / llm。
+        下方下拉框是<strong>客户端编排策略</strong>，随时可切换：AI 接待（llm）→ 接不住再转人工（bridge / notify 手动 Bridge）。
+      </div>
+      <div id="sipEnvHint" class="code" style="margin-top:0.5rem; font-size:0.72rem;">
+SIP_LISTEN_ADDR=0.0.0.0:5060
+SIP_TRUNK_DID=+86...
+SIP_INBOUND_MODE=notify   # 可选，hello 首次默认下拉；不锁死行为
+SIP_KERNEL_AUTO_LLM=false # 建议 false，编排交给 Explorer / 业务 Agent
+LLM_PROVIDER=... LLM_API_KEY=...   # llm 模式需要
+# 安全组：UDP 5060 + UDP 16384–32767
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <label>
+          入站编排（Explorer 模拟 Agent）
+          <select id="sipInboundMode">
+            <option value="notify">notify — 仅事件，手动操作</option>
+            <option value="bridge">bridge — 转 WebRTC 人工坐席</option>
+            <option value="llm">llm — SIP 腿语音对话</option>
+          </select>
+        </label>
+        <span class="kvp"><strong>SIP:</strong> <span id="sipStatus">—</span></span>
+        <span class="kvp"><strong>sip leg:</strong> <span id="sipCallIdShow">—</span></span>
+        <span class="kvp"><strong>状态:</strong> <span id="sipLegState" class="pill">idle</span></span>
+      </div>
+      <div id="sipModeBridge" class="row" style="margin-top:0.5rem;">
+        <button id="agentReadyBtn" class="primary" disabled>Agent 就绪 (Start WebRTC)</button>
+        <span class="kvp"><strong>bridge:</strong> <span id="bridgeState" class="pill">idle</span></span>
+      </div>
+      <div class="muted" style="margin-top:0.35rem; font-size:0.85rem;">
+        bridge 只需这一个按钮（内部等同 Card 2 的 Start call + call.bridge）。无需再点 Card 2。
+        请确认 Card 1 已 Connect，且页面从 <code>http://localhost:8080</code> 打开（允许麦克风）。
+      </div>
+      <div id="sipModeNotify" class="row" style="margin-top:0.5rem; display:none;">
+        <button id="sipManualLlmBtn" class="primary" disabled>AI 接待 (LLM on SIP)</button>
+        <button id="sipManualBridgeBtn" disabled>转人工 (Bridge → WebRTC)</button>
+        <button id="sipManualHangupBtn" class="danger" disabled>Hangup SIP</button>
+      </div>
+      <div id="sipModeNotifyHint" class="muted" style="margin-top:0.35rem; font-size:0.85rem; display:none;">
+        notify 不会自动听/回。顺序：<strong>Connect → 再拨打 DID</strong> → 点「AI 接待」或「转人工」；两者可来回切换（坐席 ↔ AI）。
+      </div>
+      <div id="sipDialHint" class="muted" style="margin-top:0.35rem;">Connect 后显示拨号提示</div>
+    </div>
+
+    <!-- ===== Card 3: TTS ===== -->
+    <div class="card">
+      <h2>3. Speak text <span class="api-tag">call.say</span> <span class="api-tag notify">call.play_end ←</span></h2>
+      <div class="muted">
+        Server runs Aliyun NLS TTS, streams PCM out the WebRTC track. You hear
+        it in the audio element above.
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <label style="flex:1;">
+          Text
+          <input id="sayText" type="text" value="你好，我是 flowkit 语音内核，正在测试中。">
+        </label>
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <label>
+          Voice
+          <select id="sayVoice">
+            <option value="">(default: siyue)</option>
+            <option>siyue</option>
+            <option>xiaoyun</option>
+            <option>xiaogang</option>
+            <option>Aida</option>
+          </select>
+        </label>
+        <div>
+          <label>&nbsp;</label>
+          <button id="sayBtn" class="primary" disabled>Say</button>
+        </div>
+        <span class="kvp"><strong>play_id:</strong> <span id="playIdShow">—</span></span>
+      </div>
+    </div>
+
+    <!-- ===== Card 4: ASR ===== -->
+    <div class="card">
+      <h2>4. Listen <span class="api-tag">call.listen</span> <span class="api-tag">call.stop</span> <span class="api-tag notify">call.speech_partial / call.speech_end ←</span></h2>
+      <div class="muted">
+        Streams mic to Aliyun NLS ASR. Partial transcripts in gray, finals in
+        bold.
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <button id="listenBtn" class="primary" disabled>Start listening</button>
+        <button id="stopListenBtn" disabled>Stop</button>
+        <span>
+          <label>ASR state</label>
+          <span id="asrState" class="pill">idle</span>
+        </span>
+      </div>
+      <div id="speechArea" class="speech-area" style="margin-top:0.5rem;">
+        <em class="muted">(transcripts appear here)</em>
+      </div>
+    </div>
+
+    <!-- ===== Card 5: LLM voice chat ===== -->
+    <div class="card full">
+      <h2>5. LLM voice chat <span class="api-tag">llm.chat</span> <span class="api-tag">call.listen</span> <span class="api-tag">call.say</span> <span class="api-tag">call.stop</span> <span class="api-tag notify">llm.token / speech_* / play_end ←</span></h2>
+      <div class="muted">
+        语音对话：<strong>Listen → ASR → llm.chat → 按句流式 TTS</strong>（WebRTC 音轨播放）。
+        你说话时可<strong>打断</strong> AI 播报（<code>call.stop target=play</code>）。
+        也可无通话时纯文字 Send 测 LLM。
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <span class="kvp"><strong>llm:</strong> <span id="llmInfo">—</span></span>
+        <span>
+          <label>LLM state</label>
+          <span id="llmState" class="pill">idle</span>
+        </span>
+        <span>
+          <label>TTS queue</label>
+          <span id="ttsQueueState" class="pill">idle</span>
+        </span>
+      </div>
+      <div id="llmOutput" class="llm-output" style="margin-top:0.5rem;"><em class="muted">(对话记录出现在这里)</em></div>
+      <div class="row" style="margin-top:0.5rem;">
+        <label style="flex:1;">
+          你的消息
+          <textarea id="llmUser" rows="2" placeholder="输入后 Send；Listen 后可 Use last ASR"></textarea>
+        </label>
+      </div>
+      <div class="row" style="margin-top:0.5rem;">
+        <button id="llmSendBtn" class="primary" disabled>Send</button>
+        <button id="llmUseAsrBtn" disabled>Use last ASR</button>
+        <button id="llmResetBtn" disabled>Reset chat</button>
+        <label style="display:flex; align-items:center; gap:0.35rem;">
+          <input type="checkbox" id="llmVoiceMode" checked>
+          语音对话（自动 Listen + 流式 TTS + 打断）
+        </label>
+      </div>
+    </div>
+
+    <!-- ===== Card 6: Hangup ===== -->
+    <div class="card">
+      <h2>6. Hangup <span class="api-tag">call.hangup</span></h2>
+      <div class="muted">Tears down the call on the kernel side. WebSocket stays open until you Disconnect.</div>
+      <div class="row" style="margin-top:0.5rem;">
+        <button id="hangupBtn" class="danger" disabled>Hangup</button>
+      </div>
+    </div>
+
+    <!-- ===== Card 7: Live log ===== -->
+    <div class="card full">
+      <h2>Live JSON-RPC log <span class="muted" style="font-weight:normal;">— requests / responses / notifications (+ client LLM)</span></h2>
+      <div class="row">
+        <button id="clearLog">Clear</button>
+        <label><input type="checkbox" id="hideHealth" checked> hide <code>system.health</code> heartbeats</label>
+      </div>
+      <pre id="log" class="code scroll" style="max-height:280px;"></pre>
+    </div>
+
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

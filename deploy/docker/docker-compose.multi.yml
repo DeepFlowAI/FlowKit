@@ -1,0 +1,99 @@
+# 3-instance flowkit cluster behind nginx with consistent-hash sticky
+# routing. Demonstrates the multi-instance deployment pattern without K8s.
+#
+# Usage:
+#   export FLOWKIT_API_KEY=$(openssl rand -hex 32)
+#   docker compose -f deploy/docker/docker-compose.multi.yml up --build
+#
+# Then:
+#   http://localhost:9600/health  → nginx → one of {fk1,fk2,fk3}
+#   curl 'http://localhost:9600/v1/calls?id=abc' twice → same backend each time
+#                                                         (X-Flowkit-Instance header)
+#   http://localhost:16686         → Jaeger UI
+#
+# Notes
+# - WebRTC media is NOT proxied through nginx — UDP/SRTP goes browser ↔ pod
+#   directly. Browsers learn the pod IP from the SDP answer, so the multi
+#   instance deployment must give each instance a publicly reachable
+#   address (INSTANCE_URL).
+# - SIP UDP traffic also bypasses nginx — for SIP-multi you'd use a SIP-
+#   aware load balancer (Kamailio etc.), out of scope here.
+
+services:
+  flowkit-1:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: flowkit:m4
+    environment:
+      RPC_LISTEN: 0.0.0.0:9600
+      FLOWKIT_API_KEY: ${FLOWKIT_API_KEY:?set FLOWKIT_API_KEY to a random secret, e.g. openssl rand -hex 32}
+      INSTANCE_ID: flowkit-1
+      INSTANCE_URL: http://flowkit-1:9600
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: flowkit
+      NODE_ID: flowkit-1
+    depends_on: [jaeger]
+    networks: [flowkit-net]
+    restart: unless-stopped
+
+  flowkit-2:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: flowkit:m4
+    environment:
+      RPC_LISTEN: 0.0.0.0:9600
+      FLOWKIT_API_KEY: ${FLOWKIT_API_KEY:?set FLOWKIT_API_KEY to a random secret, e.g. openssl rand -hex 32}
+      INSTANCE_ID: flowkit-2
+      INSTANCE_URL: http://flowkit-2:9600
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: flowkit
+      NODE_ID: flowkit-2
+    depends_on: [jaeger]
+    networks: [flowkit-net]
+    restart: unless-stopped
+
+  flowkit-3:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: flowkit:m4
+    environment:
+      RPC_LISTEN: 0.0.0.0:9600
+      FLOWKIT_API_KEY: ${FLOWKIT_API_KEY:?set FLOWKIT_API_KEY to a random secret, e.g. openssl rand -hex 32}
+      INSTANCE_ID: flowkit-3
+      INSTANCE_URL: http://flowkit-3:9600
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: flowkit
+      NODE_ID: flowkit-3
+    depends_on: [jaeger]
+    networks: [flowkit-net]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "9600:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on: [flowkit-1, flowkit-2, flowkit-3]
+    networks: [flowkit-net]
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    networks: [flowkit-net]
+    restart: unless-stopped
+
+networks:
+  flowkit-net:
+    driver: bridge

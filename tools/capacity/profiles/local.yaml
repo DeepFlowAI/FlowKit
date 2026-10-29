@@ -1,0 +1,38 @@
+name: local
+description: "本机 flowkit（127.0.0.1:9600 + SIP 5060）"
+
+ramp_policy:
+  kind: dev
+  label: "本地完整验证"
+  description: "尊重 scenario load.max，适合本机摸底；若要压到顶点请用 server-vertex profile。"
+  vertex_hard_ceiling: 2000
+
+target:
+  http_base: "http://127.0.0.1:9600"
+  ws_url: "ws://127.0.0.1:9600/ws"
+  sip_host: "127.0.0.1"
+  sip_port: 5060
+  sip_transport: udp
+  webrtc_public_ip: "127.0.0.1"
+  ice_servers:
+    - "stun:stun.l.google.com:19302"
+  process_name: flowkit
+
+env:
+  ASR_PROVIDER: mock
+  TTS_PROVIDER: mock
+  LLM_PROVIDER: ""
+  SIP_KERNEL_AUTO_LLM: "false"
+  SIP_EXT_IP: "127.0.0.1"
+  SIP_MAX_INBOUND_CALLS: "0"
+  SIP_RTP_IDLE_TIMEOUT: "120s"
+
+safety:
+  max_concurrent_cap: 2000
+  require_mock_providers: true
+  confirm_remote: false
+
+preflight:
+  check_health: true
+  check_metrics: true
+  check_udp_ports: []

@@ -1,0 +1,55 @@
+# Single-instance flowkit + Jaeger for local OTel inspection.
+#
+# Usage:
+#   export FLOWKIT_API_KEY=$(openssl rand -hex 32)
+#   docker compose -f deploy/docker/docker-compose.single.yml up --build
+#
+# Then open:
+#   http://localhost:9600/health   — flowkit health probe
+#   http://localhost:9600/metrics  — prom-text metrics
+#   http://localhost:16686         — Jaeger UI for traces
+#
+# Clients connect to ws://localhost:9600/ws with
+# "Authorization: Bearer $FLOWKIT_API_KEY" (or ?api_key= from a browser).
+#
+# To use your own OTel backend instead of Jaeger, comment out the jaeger
+# service and override OTEL_EXPORTER_OTLP_ENDPOINT in the flowkit env.
+
+services:
+  flowkit:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: flowkit:m4
+    ports:
+      - "9600:9600"        # JSON-RPC / WebSocket
+      - "5060:5060/udp"    # SIP (M3)
+    environment:
+      RPC_LISTEN: 0.0.0.0:9600
+      FLOWKIT_API_KEY: ${FLOWKIT_API_KEY:?set FLOWKIT_API_KEY to a random secret, e.g. openssl rand -hex 32}
+      INSTANCE_ID: flowkit-single
+      INSTANCE_URL: http://localhost:9600
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: flowkit
+      SHUTDOWN_GRACE_SECONDS: "30"
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+    networks:
+      - flowkit-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # Web UI
+      - "4318:4318"     # OTLP HTTP receiver (flowkit writes here)
+    restart: unless-stopped
+    networks:
+      - flowkit-net
+
+networks:
+  flowkit-net:
+    driver: bridge

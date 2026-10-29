@@ -1,0 +1,90 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+server/venv/
+.venv/
+
+# Environment files
+.env
+.env.local
+.env.deploy
+# Committed profiles: .env.dev / .env.prod / .env.private-test
+
+# Node
+web/node_modules/
+web/.next/
+web/out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Alembic
+server/migrations/versions/__pycache__/
+
+# Go 编译产物（go run/go build 时偶尔会落在根目录）
+/phase00-*
+/phase01-*
+/phase02-*
+/phase03-*
+/phase04-*
+/phase05-*
+/phase06-*
+/phase07-*
+/phase08-*
+
+vendor/
+
+# Flowkit build artifacts
+bin/
+coverage.out
+coverage.html
+*.test
+*.prof
+*.pprof
+
+# Local-only config (with real credentials)
+flowkit.local.yaml
+flowkit.local.yml
+
+# Generated test fixtures (large, regenerated on demand)
+tests/fixtures/audio/*.wav
+tests/fixtures/audio/*.pcm
+
+# gstack / context-save artifacts
+.gstack/
+
+# Python ephemeral
+.ruff_cache/
+
+# Capacity test run output (keep .gitkeep)
+tools/capacity/results/*
+!tools/capacity/results/.gitkeep
+
+# compiled binary
+/flowkit
+# benchmark recordings (large binaries)
+*.wav
+*.mp3
+# keep the tiny embedded test fixture used by internal/audio
+!internal/audio/testdata/tone.mp3

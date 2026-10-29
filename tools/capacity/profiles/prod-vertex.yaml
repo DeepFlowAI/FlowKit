@@ -1,0 +1,38 @@
+name: prod-vertex
+description: "生产服务器本机顶点压测（在服务器上执行 run.sh；webrtc_public_ip / SIP_EXT_IP 填该机公网 IP）"
+
+ramp_policy:
+  kind: vertex
+  label: "生产顶点探测"
+  description: "在服务器本机加压，忽略 scenario load.max，直至失败或 CPU/内存安全阈值。"
+  vertex_hard_ceiling: 2000
+  stop_on_cpu_pct: 85
+  stop_on_rss_pct_of_ram: 80
+
+target:
+  http_base: "http://127.0.0.1:9600"
+  ws_url: "ws://127.0.0.1:9600/ws"
+  sip_host: "127.0.0.1"
+  sip_port: 5060
+  sip_transport: udp
+  webrtc_public_ip: "203.0.113.50"
+  ice_servers:
+    - "stun:stun.l.google.com:19302"
+  process_name: flowkit
+
+env:
+  ASR_PROVIDER: mock
+  TTS_PROVIDER: mock
+  LLM_PROVIDER: ""
+  SIP_KERNEL_AUTO_LLM: "false"
+  SIP_EXT_IP: "203.0.113.50"
+  SIP_MAX_INBOUND_CALLS: "0"
+
+safety:
+  max_concurrent_cap: 0
+  require_mock_providers: true
+  confirm_remote: false
+
+preflight:
+  check_health: true
+  check_metrics: true

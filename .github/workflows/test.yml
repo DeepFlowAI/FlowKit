@@ -1,0 +1,67 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  go:
+    name: go test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: go vet
+        run: go vet ./...
+      - name: check guidelines sync (skipped when absent)
+        run: make check-guidelines
+      - name: go test (-race)
+        env:
+          # Long timeout accommodates SIP T1×64 transaction timer in tests
+          GOTEST_FLAGS: -race -timeout 90s
+        run: go test ${{ env.GOTEST_FLAGS }} ./...
+      - name: build binary
+        run: go build -ldflags="-s -w" -o /tmp/flowkit ./cmd/flowkit
+      - name: version
+        run: /tmp/flowkit -version
+
+  python:
+    name: python sdk
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: install sdk + test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "sdk/python[test]"
+          pip install pytest pytest-asyncio websockets
+      - name: pytest
+        run: pytest sdk/python -v
+
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    continue-on-error: true   # advisory until we tune .golangci.yml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          # v1.x binaries are built with Go 1.24 and cannot lint go 1.26 modules.
+          version: v2.10.1
+          args: --timeout=5m

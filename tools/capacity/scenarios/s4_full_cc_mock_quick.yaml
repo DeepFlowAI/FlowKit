@@ -1,0 +1,44 @@
+id: s4_full_cc_mock_quick
+name: "S4 · Mock CC 快速验证"
+enabled: true
+
+load:
+  start: 3
+  step: 3
+  max: 6
+  cps: 2
+  hold_seconds: 0
+  stagger_ms: 200
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 45000
+  max_loss_pct: 2.0
+
+steady:
+  enabled: false
+  ratio: 0.8
+  duration_seconds: 60
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 15
+  wait_seconds: 15
+
+drivers:
+  - type: sip_inbound
+    codec: pcmu
+  - type: mock_cc
+    workflow:
+      - call.answer
+      - call.say
+      - call.listen
+      - call.hangup
+    say_text: "capacity test"
+    listen_timeout_seconds: 3
+
+requires:
+  env:
+    SIP_KERNEL_AUTO_LLM: "false"
+    ASR_PROVIDER: mock
+    TTS_PROVIDER: mock

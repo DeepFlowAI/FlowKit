@@ -1,0 +1,31 @@
+id: s1_sip_inbound_quick
+name: "S1 · SIP 快速验证"
+enabled: true
+
+load:
+  start: 5
+  step: 5
+  max: 20
+  cps: 10
+  hold_seconds: 5
+  stagger_ms: 0
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 3000
+  max_loss_pct: 2.0
+
+steady:
+  enabled: false
+  ratio: 0.8
+  duration_seconds: 60
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 15
+  wait_seconds: 10
+
+drivers:
+  - type: sip_inbound
+    engine: sipp
+    codec: pcmu

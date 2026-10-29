@@ -1,0 +1,30 @@
+id: s2_webrtc_offer
+name: "S2 · WebRTC Offer 并发"
+enabled: true
+
+load:
+  start: 5
+  step: 5
+  max: 500
+  cps: 20
+  hold_seconds: 60
+  stagger_ms: 50
+
+success:
+  min_rate: 0.95
+  max_setup_p99_ms: 5000
+  max_loss_pct: 1.0
+
+steady:
+  enabled: true
+  ratio: 0.8
+  duration_seconds: 3600
+
+teardown:
+  verify_zero_calls: true
+  verify_mem_baseline_pct: 15
+  wait_seconds: 60
+
+drivers:
+  - type: webrtc_offer
+    rpc_method: webrtc.offer

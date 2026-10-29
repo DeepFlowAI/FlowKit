@@ -1,0 +1,182 @@
+# Flowkit example configuration. Copy to flowkit.local.yaml and edit for
+# local development; production deploys typically inject env vars.
+#
+# Env-var expansion is supported via ${VAR} and ${VAR:-default}.
+
+rpc:
+  # WebSocket + HTTP health endpoint. Leave empty to disable TCP.
+  # Binding a non-loopback address requires api_key.
+  listen: "${RPC_LISTEN:-127.0.0.1:9600}"
+  # Shared secret for /ws and /media/pcm: clients send
+  # "Authorization: Bearer <key>". Generate with `openssl rand -hex 32`.
+  api_key: "${FLOWKIT_API_KEY:-}"
+  # Escape hatch: serve a non-loopback listen without api_key. Only for
+  # networks where every peer is trusted.
+  allow_insecure_no_auth: ${FLOWKIT_ALLOW_INSECURE_NO_AUTH:-false}
+  # Unix domain socket for same-machine Python SDK. Leave empty to disable.
+  unix: "/tmp/flowkit.sock"
+  # Max time a client has to send system.hello after connecting.
+  hello_timeout: 5s
+
+# SIP UA — disabled when listen is empty (set SIP_LISTEN_ADDR in .env).
+sip:
+  listen: "${SIP_LISTEN_ADDR:-}"
+  alt_listen: "${SIP_ALT_LISTEN_ADDR:-}"
+  ext_ip: "${SIP_EXT_IP:-auto}"
+  trunk_vendor: "${SIP_TRUNK_VENDOR:-}"
+  trunk_server: "${SIP_TRUNK_SERVER:-}"
+  trunk_port: ${SIP_TRUNK_PORT:-5060}
+  trunk_user: "${SIP_TRUNK_USERNAME:-}"
+  trunk_pass: "${SIP_TRUNK_PASSWORD:-}"
+  trunk_did: "${SIP_TRUNK_DID:-}"
+  trunk_outbound_server: "${SIP_TRUNK_OUTBOUND_SERVER:-}"
+  trunk_outbound_port: ${SIP_TRUNK_OUTBOUND_PORT:-5060}
+  trunk_outbound_did: "${SIP_TRUNK_OUTBOUND_DID:-}"
+  trunk_outbound_callee_prefix: "${SIP_TRUNK_OUTBOUND_CALLEE_PREFIX:-}"
+  trunk_outbound_user: "${SIP_TRUNK_OUTBOUND_USERNAME:-}"
+  trunk_outbound_pass: "${SIP_TRUNK_OUTBOUND_PASSWORD:-}"
+  trunk_outbound_realm: "${SIP_TRUNK_OUTBOUND_REALM:-}"
+  allow_originate: ${SIP_ALLOW_ORIGINATE:-false}
+  # Next-hop SIP proxy (e.g. Kamailio :5060) for trunk outbound INVITEs;
+  # empty sends directly to the trunk. Used for blue/green behind a dispatcher.
+  outbound_proxy: "${SIP_OUTBOUND_PROXY:-}"
+  # Next-hop for direct / extension originates (empty trunk_id); typically
+  # Kamailio's phone-facing port so INVITEs keep NAT affinity with REGISTER.
+  # Empty falls back to outbound_proxy.
+  phone_outbound_proxy: "${SIP_PHONE_OUTBOUND_PROXY:-}"
+  transport: "UDP"
+  # Client policy hint for SDK/Explorer (kernel always uses notify semantics).
+  inbound_mode: "${SIP_INBOUND_MODE:-notify}"
+
+# WebRTC (M2).
+webrtc:
+  # STUN list for browser clients (also returned in system.hello.ice_servers).
+  # Put domestic STUN first for lower latency inside CN; keep a global fallback.
+  ice_servers:
+    - "stun:stun.miwifi.com:3478"
+    - "stun:stun.l.google.com:19302"
+  # Public IP for ICE host candidates (Docker/NAT). Empty = auto from INSTANCE_URL.
+  nat1to1_ip: "${WEBRTC_PUBLIC_IP:-}"
+
+# ASR / TTS providers. "mock" is in-process — useful for development without
+# external credentials. "aliyun" reads ALIYUN_* env vars. "custom" points at a
+# self-hosted private service (ASR=FunASR WebSocket, TTS=CosyVoice FastAPI).
+asr:
+  provider: "${ASR_PROVIDER:-mock}"
+  config:
+    base_url: "${ASR_BASE_URL:-}"
+    mode: "${ASR_MODE:-2pass}"
+    hotwords: "${ASR_HOTWORDS:-}"
+    itn: "${ASR_ITN:-true}"
+    insecure_skip_verify: "${ASR_INSECURE_SKIP_VERIFY:-false}"
+
+tts:
+  provider: "${TTS_PROVIDER:-mock}"
+  config:
+    base_url: "${TTS_BASE_URL:-}"
+    voice: "${TTS_VOICE:-}"
+    source_sample_rate: "${TTS_SOURCE_SAMPLE_RATE:-24000}"
+    endpoint: "${TTS_ENDPOINT:-}"
+
+# Standalone (call-less) ASR/TTS exposed over RPC for non-telephony consumers
+# such as the VoiceSpeed agent console. Leave a provider empty to fall back to
+# the call-path asr/tts above; set it (e.g. custom → private FunASR/CosyVoice)
+# to serve the agent path independently of what SIP calls use.
+agent:
+  asr:
+    provider: "${AGENT_ASR_PROVIDER:-}"
+    config:
+      base_url: "${AGENT_ASR_BASE_URL:-}"
+      mode: "${AGENT_ASR_MODE:-2pass}"
+      hotwords: "${AGENT_ASR_HOTWORDS:-}"
+      itn: "${AGENT_ASR_ITN:-true}"
+      insecure_skip_verify: "${AGENT_ASR_INSECURE_SKIP_VERIFY:-false}"
+  tts:
+    provider: "${AGENT_TTS_PROVIDER:-}"
+    config:
+      base_url: "${AGENT_TTS_BASE_URL:-}"
+      voice: "${AGENT_TTS_VOICE:-}"
+      source_sample_rate: "${AGENT_TTS_SOURCE_SAMPLE_RATE:-24000}"
+      endpoint: "${AGENT_TTS_ENDPOINT:-}"
+
+llm:
+  provider: "${LLM_PROVIDER:-}"
+  system_prompt: "${LLM_SYSTEM_PROMPT:-你是 flowkit 智能语音助手，请用简洁、口语化的中文回答（每次回复不要超过 80 字）。}"
+  config:
+    api_key: "${LLM_API_KEY:-}"
+    model: "${LLM_MODEL:-}"
+    base_url: "${LLM_BASE_URL:-}"
+
+# Session index. "local" = in-memory (single node). "redis" lands in M4.
+store:
+  type: "local"
+  redis:
+    addr: "${REDIS_ADDR:-}"
+    password: "${REDIS_PASSWORD:-}"
+    db: 0
+
+# Node identity (must be unique across a multi-node deployment).
+node:
+  id: "${NODE_ID:-flowkit-1}"
+  addr: "${NODE_ADDR:-localhost:9600}"
+
+# Logging / OTel. Empty otlp_endpoint = stderr-only (default for dev).
+# Shared auth headers go in OTEL_EXPORTER_OTLP_HEADERS. Backend-specific routing
+# headers are set per-endpoint so they never cross: OTEL_TRACES_PIPELINE_NAME is
+# sent only to traces, OTEL_LOGS_TABLE_NAME only to logs (e.g. GreptimeDB).
+observability:
+  service_name: "flowkit"
+  otlp_endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT:-}"
+  log_level: "${LOG_LEVEL:-info}"
+
+# Multi-SIP Trunk Catalog.
+# `static` wraps SIP_TRUNK_* env vars into a built-in `system` Provider.
+# `register` enables the HTTP API for CC-side dynamic Provider registration.
+telecom:
+  register:
+    enabled: ${TELECOM_REGISTER_ENABLED:-false}
+    api_key: "${FLOWKIT_TELECOM_API_KEY:-}"
+    lease_ttl_sec_min: 30
+    lease_ttl_sec_max: 300
+    sweep_interval_ms: 5000
+  static:
+    enabled: ${TELECOM_STATIC_ENABLED:-true}
+  inbound:
+    # Answer INVITEs only from catalog trunk IPs and registered extensions;
+    # 403 everything else (internet SIP scanners). Set false to accept any peer.
+    reject_unknown_peer: ${TELECOM_REJECT_UNKNOWN_PEER:-true}
+    to_normalization: "${TELECOM_TO_NORMALIZATION:-e164_strip_prefix}"
+  # Trust-network SIP extension registrar: record REGISTERs so calls can be
+  # originated to a phone by extension number. No digest auth (REGISTER still 200 OK).
+  extensions:
+    enabled: ${TELECOM_EXTENSIONS_ENABLED:-false}
+    sweep_interval_ms: 5000
+  # Multi-party audio mixing rooms (three-way, barge-in, whisper, takeover,
+  # whole-chain hangup). When enabled, the room.* JSON-RPC methods register.
+  rooms:
+    enabled: ${TELECOM_ROOMS_ENABLED:-false}
+
+# Call recording — stereo WAV (L=remote, R=local).
+recording:
+  enabled: ${RECORDING_ENABLED:-false}
+  start_on: "${RECORDING_START_ON:-answered}"
+  # Outbound only: record real provisional RTP (for example carrier
+  # unavailable/busy announcements). No RTP means no recording artifact.
+  capture_early_media: ${RECORDING_CAPTURE_EARLY_MEDIA:-true}
+  encoding: "${RECORDING_ENCODING:-pcm16}"   # v0.1: pcm16 only
+  layout: "${RECORDING_LAYOUT:-stereo}"      # stereo | mono_mix
+  flush_interval: ${RECORDING_FLUSH_INTERVAL:-4s}
+  max_duration: ${RECORDING_MAX_DURATION:-4h}
+  drop_on_overrun: ${RECORDING_DROP_ON_OVERRUN:-true}
+  storage:
+    backend: "${RECORDING_STORAGE_BACKEND:-aliyun_oss}"
+    aliyun_oss:
+      endpoint: "${OSS_ENDPOINT:-}"
+      bucket: "${OSS_BUCKET:-}"
+      key_template: "recordings/{date}/{conversation_id}/{call_id}.wav"
+      access_key: "${OSS_ACCESS_KEY:-}"
+      access_secret: "${OSS_ACCESS_SECRET:-}"
+      sse: ${OSS_SSE:-true}
+    local:
+      dir: "${RECORDING_LOCAL_DIR:-/var/lib/flowkit/recordings}"
+      orphan_dir: "${RECORDING_ORPHAN_DIR:-/var/lib/flowkit/recordings/orphan}"
